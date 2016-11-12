@@ -36,7 +36,8 @@ configure(allprojects) {
 		}
 		tasks.withType(Test) {
 			maxParallelForks = 1
-			minHeapSize = '256m'
+			minHeapSize = '128m'
+			maxHeapSize = '384m'
 		}
 	} else {
 		println 'disable travis'
