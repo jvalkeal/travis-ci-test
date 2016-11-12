@@ -20,5 +20,5 @@ script: ./gradlew clean build
 
 env:
   global:
-    - GRADLE_OPTS="-Xms128m"
+    - GRADLE_OPTS="-Xms512m"
 
