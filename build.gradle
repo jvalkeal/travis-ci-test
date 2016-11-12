@@ -30,6 +30,7 @@ configure(allprojects) {
 	apply plugin: 'propdeps'
 
 	if (System.env.TRAVIS == 'true') {
+		println 'enable travis'
 		tasks.withType(GroovyCompile) {
 			groovyOptions.fork = false
 		}
@@ -37,6 +38,8 @@ configure(allprojects) {
 			maxParallelForks = 1
 			minHeapSize = '256m'
 		}
+	} else {
+		println 'disable travis'
 	}
 
 	compileJava {
