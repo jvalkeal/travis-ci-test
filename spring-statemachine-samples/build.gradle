@@ -1,0 +1,133 @@
+description = 'Spring State Machine Samples Common'
+
+project('spring-statemachine-samples-turnstile') {
+	description = 'Spring State Machine Turnstile Sample'
+	dependencies {
+		compile project(":spring-statemachine-samples-common")
+	}
+}
+
+project('spring-statemachine-samples-showcase') {
+	description = 'Spring State Machine Showcase Sample'
+	dependencies {
+		compile project(":spring-statemachine-samples-common")
+	}
+}
+
+project('spring-statemachine-samples-cdplayer') {
+	description = 'Spring State Machine CD Player Sample'
+	dependencies {
+		compile project(":spring-statemachine-samples-common")
+	}
+}
+
+project('spring-statemachine-samples-tasks') {
+	description = 'Spring State Machine Parallel Regions Sample'
+	dependencies {
+		compile project(":spring-statemachine-samples-common")
+	}
+}
+
+project('spring-statemachine-samples-washer') {
+	description = 'Spring State Machine History State Sample'
+	dependencies {
+		compile project(":spring-statemachine-samples-common")
+	}
+}
+
+project('spring-statemachine-samples-zookeeper') {
+	description = 'Spring State Machine Distributed Sample'
+	dependencies {
+		compile project(":spring-statemachine-samples-common")
+		compile project(":spring-statemachine-zookeeper")
+	}
+}
+
+project('spring-statemachine-samples-persist') {
+	description = 'Spring State Machine Persist Sample'
+	dependencies {
+		compile project(":spring-statemachine-samples-common")
+		compile project(":spring-statemachine-recipes-common")
+		compile ("org.hsqldb:hsqldb:$hsqlVersion")
+		compile ("org.springframework:spring-jdbc:$springVersion")
+	}
+}
+
+project('spring-statemachine-samples-web') {
+	description = 'Spring State Machine Web Sample'
+	dependencies {
+		compile project(":spring-statemachine-cluster")
+		compile("org.springframework.boot:spring-boot-starter-security:$springBootVersion")
+		compile("org.springframework.boot:spring-boot-starter-web:$springBootVersion")
+		compile("org.springframework.boot:spring-boot-starter-websocket:$springBootVersion")
+		compile("org.springframework:spring-webmvc:$springVersion")
+		compile("org.springframework:spring-websocket:$springVersion")
+		compile("org.springframework.security:spring-security-messaging:$springSecurityVersion")
+		compile("org.springframework.session:spring-session:$springSessionVersion")
+	}
+}
+
+project('spring-statemachine-samples-scope') {
+	description = 'Spring State Machine Web Scope Sample'
+	dependencies {
+		compile("org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion")
+	}
+}
+
+project('spring-statemachine-samples-security') {
+	description = 'Spring State Machine Web Security Sample'
+	dependencies {
+		compile("org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion")
+		compile("org.springframework.boot:spring-boot-starter-security:$springBootVersion")
+		compile("org.springframework.security:spring-security-config:$springSecurityVersion")
+		compile("org.springframework.security:spring-security-web:$springSecurityVersion")
+	}
+}
+
+project('spring-statemachine-samples-eventservice') {
+	description = 'Spring State Machine Event Service Sample'
+	dependencies {
+		compile project(":spring-statemachine-redis")
+		compile("org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion")
+		compile("org.apache.commons:commons-pool2:$commonsPool2Version")
+	}
+}
+
+project('spring-statemachine-samples-deploy') {
+	description = 'Spring State Machine Deploy Sample'
+	dependencies {
+		compile project(":spring-statemachine-uml")
+		compile("org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion")
+	}
+}
+
+project('spring-statemachine-samples-ordershipping') {
+	description = 'Spring State Machine Order Shipping Sample'
+	dependencies {
+		compile project(":spring-statemachine-uml")
+		compile("org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion")
+	}
+}
+
+project('spring-statemachine-samples-datajpa') {
+	description = 'Spring State Machine Data Jpa Sample'
+	dependencies {
+		compile project(":spring-statemachine-data-common:spring-statemachine-data-jpa")
+		compile("org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion")
+		compile("org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion")
+		compile("org.springframework.boot:spring-boot-devtools:$springBootVersion")
+		compile("com.h2database:h2:$h2Version")
+	}
+}
+
+project('spring-statemachine-samples-monitoring') {
+	description = 'Spring State Machine Monitoring Sample'
+	dependencies {
+		compile project(":spring-statemachine-boot")
+		compile("org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion")
+		compile("org.springframework.boot:spring-boot-starter-security:$springBootVersion")
+		testCompile("com.jayway.jsonpath:json-path:$jsonpathVersion")
+		testCompile("com.jayway.jsonpath:json-path-assert:$jsonpathVersion")
+	}
+}
+

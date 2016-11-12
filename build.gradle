@@ -1,0 +1,520 @@
+buildscript {
+	repositories {
+		maven { url 'http://repo.springsource.org/libs-release'}
+		maven { url 'http://repo.springsource.org/plugins-release' }
+	}
+	dependencies {
+		classpath("org.springframework.build.gradle:propdeps-plugin:0.0.7")
+		classpath('org.asciidoctor:asciidoctor-gradle-plugin:1.5.2')
+		classpath("io.spring.gradle:docbook-reference-plugin:0.3.1")
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:1.4.1.RELEASE")
+	}
+}
+
+def recipeProjects() {
+	subprojects.findAll { project ->
+		project.name.contains('spring-statemachine-recipes') && project.name != 'spring-statemachine-recipes-common'
+	}
+}
+
+def sampleProjects() {
+	subprojects.findAll { project ->
+		project.name.contains('spring-statemachine-samples') && project.name != 'spring-statemachine-samples-common'
+	}
+}
+
+configure(allprojects) {
+	apply plugin: 'java'
+	apply plugin: 'eclipse'
+	apply plugin: 'idea'
+	apply plugin: 'propdeps'
+
+	compileJava {
+		sourceCompatibility = 1.7
+		targetCompatibility = 1.7
+	}
+
+	compileTestJava {
+		sourceCompatibility = 1.8
+		targetCompatibility = 1.8
+	}
+
+	group = 'org.springframework.statemachine'
+	
+	[compileJava, compileTestJava]*.options*.compilerArgs = ['-Xlint:none']
+
+	repositories {
+		mavenCentral()
+		maven { url "http://repo.springsource.org/libs-release" }
+		maven { url "http://repo.springsource.org/libs-milestone" }
+	}
+
+	task integrationTest(type: Test) {
+		include '**/*IntegrationTests.*'
+	}
+
+	test {
+		exclude '**/*IntegrationTests.*'
+	}
+}
+
+configure(subprojects) { subproject ->
+	apply from: "${rootProject.projectDir}/publish-maven.gradle"
+
+	jar {
+		manifest.attributes['Implementation-Title'] = subproject.name
+		manifest.attributes['Implementation-Version'] = subproject.version
+
+		from("${rootProject.projectDir}/src/dist") {
+			include "license.txt"
+			include "notice.txt"
+			into "META-INF"
+			expand(copyright: new Date().format('yyyy'), version: project.version)
+		}
+	}
+
+	javadoc {
+		// /config/configuration/StateMachineConfiguration.html...
+		// java.lang.ClassCastException: com.sun.tools.javadoc.MethodDocImpl cannot be cast
+		// to com.sun.tools.javadoc.AnnotationTypeElementDocImpl
+		// @Bean(name = StateMachineSystemConstants.DEFAULT_ID_STATEMACHINEFACTORY)
+		// vs.
+		// @Bean
+
+		enabled = false
+		options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
+		options.author = true
+		options.header = project.name
+		verbose = true
+	}
+
+	task sourcesJar(type: Jar, dependsOn:classes) {
+		classifier = 'sources'
+		from sourceSets.main.allJava
+	}
+
+	task javadocJar(type: Jar) {
+		classifier = 'javadoc'
+		from javadoc
+	}
+
+	artifacts {
+		archives sourcesJar
+		archives javadocJar
+	}
+}
+
+project('spring-statemachine-core') {
+	description = "Spring State Machine Core"
+    
+	dependencies {
+		compile "org.springframework:spring-tx:$springVersion"
+		compile "org.springframework:spring-messaging:$springVersion"
+		optional "org.springframework.security:spring-security-core:$springSecurityVersion"
+
+		testCompile "org.springframework:spring-test:$springVersion"
+		testCompile "org.springframework:spring-web:$springVersion"
+		testCompile "org.springframework:spring-webmvc:$springVersion"
+		testCompile "org.apache.tomcat.embed:tomcat-embed-core:$tomcatEmbedVersion"
+		testCompile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+		testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+		testCompile("org.mockito:mockito-core:$mockitoVersion") { dep ->
+			exclude group: "org.hamcrest"
+		}
+		testCompile "junit:junit:$junitVersion"
+		testCompile "org.springframework.security:spring-security-config:$springSecurityVersion"
+		testCompile "org.springframework.security:spring-security-test:$springSecurityVersion"
+		testCompile "javax.servlet:javax.servlet-api:$servletApiVersion"
+		testRuntime "log4j:log4j:$log4jVersion"
+	}
+}
+
+project('spring-statemachine-boot') {
+	description = "Spring State Machine Boot"
+    
+	dependencies {
+		compile project(":spring-statemachine-core")
+		compile "org.springframework.boot:spring-boot-autoconfigure:$springBootVersion"
+		compile "org.springframework.boot:spring-boot-actuator:$springBootVersion"
+		testCompile "org.springframework.boot:spring-boot-test:$springBootVersion"
+		testCompile "org.springframework:spring-test:$springVersion"
+		testCompile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+		testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+		testCompile "junit:junit:$junitVersion"
+	}
+}
+
+project('spring-statemachine-test') {
+	description = "Spring State Machine Test"
+    
+	dependencies {
+		compile project(":spring-statemachine-core")
+
+		compile "org.springframework:spring-test:$springVersion"
+		compile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+		compile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+		compile "junit:junit:$junitVersion"
+	}
+}
+
+project('spring-statemachine-kryo') {
+	description = "Spring State Machine Kryo"
+
+	dependencies {
+		compile project(":spring-statemachine-core")
+		compile "com.esotericsoftware:kryo-shaded:$kryoVersion"
+
+		testCompile project(":spring-statemachine-test")
+		testCompile "org.springframework:spring-test:$springVersion"
+		testCompile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+		testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+		testCompile "junit:junit:$junitVersion"
+		testRuntime "log4j:log4j:$log4jVersion"
+	}
+}
+
+project('spring-statemachine-zookeeper') {
+	description = "Spring State Machine Zookeeper"
+
+	dependencies {
+		compile project(":spring-statemachine-core")
+		compile project(":spring-statemachine-kryo")
+		compile "org.apache.curator:curator-recipes:$curatorVersion"
+
+		testCompile project(":spring-statemachine-test")
+		testCompile "org.apache.curator:curator-test:$curatorVersion"
+		testCompile "org.springframework:spring-test:$springVersion"
+		testCompile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+		testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+		testCompile "junit:junit:$junitVersion"
+		testRuntime "log4j:log4j:$log4jVersion"
+	}
+}
+
+project('spring-statemachine-redis') {
+	description = "Spring State Machine Redis"
+
+	dependencies {
+		compile project(":spring-statemachine-core")
+		compile project(":spring-statemachine-kryo")
+		compile "org.springframework.data:spring-data-redis:$springDataRedisVersion"
+		compile "redis.clients:jedis:$jedisVersion"
+
+		testCompile project(":spring-statemachine-test")
+		testCompile "org.springframework:spring-test:$springVersion"
+		testCompile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+		testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+		testCompile "junit:junit:$junitVersion"
+		testRuntime "log4j:log4j:$log4jVersion"
+	}
+}
+
+project('spring-statemachine-data-common') {
+	configurations {
+		testArtifacts.extendsFrom testRuntime
+	}
+	dependencies {
+		compile project(":spring-statemachine-core")
+		compile "org.springframework.data:spring-data-commons:$springDataCommonsVersion"
+		optional "org.springframework.security:spring-security-core:$springSecurityVersion"
+		compile "com.fasterxml.jackson.core:jackson-core:$jackson2Version"
+		compile "com.fasterxml.jackson.core:jackson-databind:$jackson2Version"
+		testCompile project(":spring-statemachine-test")
+		testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+		testRuntime "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+	}
+	task testJar(type: Jar) {
+		classifier = 'tests'
+		from sourceSets.test.output
+	}
+	artifacts {
+		testArtifacts testJar
+	}
+}
+
+project('spring-statemachine-cluster') {
+	description = "Spring State Machine Cluster"
+
+	dependencies {
+		compile project(":spring-statemachine-zookeeper")
+		compile "org.springframework.cloud:spring-cloud-cluster-zookeeper:$springCloudClusterVersion"
+
+		testCompile project(":spring-statemachine-test")
+		testCompile "org.apache.curator:curator-test:$curatorVersion"
+		testCompile "org.springframework:spring-test:$springVersion"
+		testCompile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+		testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+		testCompile "junit:junit:$junitVersion"
+		testRuntime "log4j:log4j:$log4jVersion"
+	}
+}
+
+project('spring-statemachine-uml') {
+	description = "Spring State Machine Uml"
+
+	dependencies {
+		compile project(":spring-statemachine-core")
+		optional "org.springframework.security:spring-security-core:$springSecurityVersion"
+
+		// these eclipse maven deps are simply broken
+		compile("org.eclipse.uml2:uml:$eclipseUml2UmlVersion") { dep ->
+			exclude group: "org.eclipse.core", module: "runtime"
+			exclude group: "org.eclipse.emf", module: "ecore"
+			exclude group: "org.eclipse.emf.ecore", module: "xmi"
+			exclude group: "org.eclipse.emf.mapping", module: "ecore2xml"
+			exclude group: "org.eclipse.uml2", module: "common"
+			exclude group: "org.eclipse.uml2", module: "types"
+		}
+		compile("org.eclipse.uml2:types:$eclipseUml2TypesVersion") { dep ->
+			exclude group: "org.eclipse.core", module: "runtime"
+			exclude group: "org.eclipse.emf", module: "ecore"
+			exclude group: "org.eclipse.uml2", module: "common"
+		}
+		compile("org.eclipse.uml2:common:$eclipseUml2CommonVersion") { dep ->
+			exclude group: "org.eclipse.core", module: "runtime"
+			exclude group: "org.eclipse.emf", module: "ecore"
+		}
+		compile "org.eclipse.emf:org.eclipse.emf.ecore.xmi:$eclipseEmfXmiVersion"
+		compile "org.eclipse.emf:org.eclipse.emf.ecore:$eclipseEmfEcoreVersion"
+		compile "org.eclipse.emf:org.eclipse.emf.common:$eclipseEmfCommonVersion"
+
+		testCompile "org.springframework:spring-test:$springVersion"
+		testCompile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+		testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+		testCompile "junit:junit:$junitVersion"
+		testRuntime "log4j:log4j:$log4jVersion"
+	}
+}
+
+project('spring-statemachine-build-tests') {
+	description = "Spring State Machine Build Tests"
+	configurations.archives.artifacts.removeAll { it.archiveTask.is jar }
+	tasks.findByPath("artifactoryPublish")?.enabled = false
+
+	dependencies {
+		testCompile project(":spring-statemachine-uml")
+		testCompile project(":spring-statemachine-test")
+		testCompile "org.springframework:spring-test:$springVersion"
+		testCompile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+		testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+		testCompile "junit:junit:$junitVersion"
+	}
+}
+
+configure(recipeProjects()) {
+	dependencies {
+		compile project(":spring-statemachine-recipes-common")
+		testCompile "org.springframework:spring-test:$springVersion"
+		testCompile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+		testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+		testCompile "junit:junit:$junitVersion"
+	}
+}
+
+project('spring-statemachine-recipes-common') {
+	dependencies {
+		compile project(":spring-statemachine-core")
+		testCompile "org.springframework:spring-test:$springVersion"
+		testCompile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+		testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+		testCompile "junit:junit:$junitVersion"
+	}
+}
+
+configure(sampleProjects()) {
+	apply plugin: 'spring-boot'
+	configurations.archives.artifacts.removeAll { it.archiveTask.is jar }
+	tasks.findByPath("artifactoryPublish")?.enabled = false
+	// as samples are not published, we can use jdk8
+	compileJava {
+		sourceCompatibility = 1.8
+		targetCompatibility = 1.8
+	}
+	dependencies {
+		compile project(":spring-statemachine-core")
+		compile "org.springframework:spring-context-support:$springVersion"
+		testCompile("org.mockito:mockito-core:$mockitoVersion") { dep ->
+			exclude group: "org.hamcrest"
+		}
+		testCompile project(":spring-statemachine-test")
+		testCompile "org.springframework.boot:spring-boot-test:$springBootVersion"
+		testCompile "org.springframework:spring-test:$springVersion"
+		testCompile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+		testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+		testCompile "junit:junit:$junitVersion"
+	}
+}
+
+project('spring-statemachine-samples-common') {
+	configurations.archives.artifacts.removeAll { it.archiveTask.is jar }
+	tasks.findByPath("artifactoryPublish")?.enabled = false
+	dependencies {
+		compile project(":spring-statemachine-core")
+		compile "org.springframework.shell:spring-shell:$springShellVersion"
+		compile "org.springframework.boot:spring-boot-starter:$springBootVersion"
+	}
+}
+
+configure(rootProject) {
+	description = 'Spring State Machine'
+
+	apply plugin: 'org.asciidoctor.gradle.asciidoctor'
+	apply plugin: "docbook-reference"
+
+	// don't publish the default jar for the root project
+	configurations.archives.artifacts.clear()
+
+	reference {
+		sourceDir = new File(asciidoctor.outputDir , 'docbook5')
+		pdfFilename = "spring-statemachine-reference.pdf"
+		epubFilename = "spring-statemachine-reference.epub"
+		expandPlaceholders = ""
+	}
+
+	afterEvaluate {
+		tasks.findAll { it.name.startsWith("reference") }.each{ it.dependsOn.add("asciidoctor") }
+	}
+
+	asciidoctorj {
+		version = '1.5.2'
+	}
+
+	asciidoctor {
+		sourceDir = file("docs/src/reference/asciidoc")
+		backends = ['docbook5']
+		options eruby: 'erubis'
+		attributes docinfo: '',
+			copycss : '',
+			icons : 'font',
+			'source-highlighter': 'prettify',
+			sectanchors : '',
+			toc2: '',
+			idprefix: '',
+			idseparator: '-',
+			doctype: 'book',
+			numbered: '',
+			'spring-statemachine-version' : project.version,
+			'spring-version' : springVersion,
+			revnumber : project.version
+	}
+
+	dependencies { // for integration tests
+	}
+
+	task copyDocsSamples(type: Copy) {
+		from 'spring-statemachine-core/src/test/java/org/springframework/statemachine/docs'
+		from 'spring-statemachine-test/src/test/java/org/springframework/statemachine/test/docs'
+		from 'spring-statemachine-recipes/src/test/java/org/springframework/statemachine/recipes/docs'
+		from 'spring-statemachine-zookeeper/src/test/java/org/springframework/statemachine/zookeeper/docs'
+		from 'spring-statemachine-uml/src/test/java/org/springframework/statemachine/uml/docs'
+		from 'spring-statemachine-uml/src/test/resources/org/springframework/statemachine/uml/docs'
+		from 'spring-statemachine-data/jpa/src/test/java/org/springframework/statemachine/data/jpa/docs'
+		from 'spring-statemachine-samples/src/main/java/'
+		from 'spring-statemachine-samples/washer/src/main/java/'
+		from 'spring-statemachine-samples/tasks/src/main/java/'
+		from 'spring-statemachine-samples/turnstile/src/main/java/'
+		from 'spring-statemachine-samples/showcase/src/main/java/'
+		from 'spring-statemachine-samples/cdplayer/src/main/java/'
+		from 'spring-statemachine-samples/persist/src/main/java/'
+		from 'spring-statemachine-samples/zookeeper/src/main/java/'
+		from 'spring-statemachine-samples/security/src/main/java/'
+		from 'spring-statemachine-samples/eventservice/src/main/java/'
+		from 'spring-statemachine-samples/datajpa/src/main/java/'
+		from 'spring-statemachine-samples/datajpa/src/main/resources/'
+		from 'spring-statemachine-samples/monitoring/src/main/java/'
+		include '**/*.java'
+		include '**/*.uml'
+		include '**/*.json'
+		into 'docs/src/reference/asciidoc/samples'
+	}
+
+	asciidoctor.dependsOn copyDocsSamples
+
+	task api(type: Javadoc) {
+		group = 'Documentation'
+		description = 'Generates aggregated Javadoc API documentation.'
+		title = "${rootProject.description} ${version} API"
+		options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
+		options.author = true
+		options.header = rootProject.description
+		options.links(
+			'http://docs.jboss.org/jbossas/javadoc/4.0.5/connector'
+		)
+
+		// disable javadocs for samples
+		source subprojects
+		.findAll { project ->
+			!project.name.contains('samples')
+		}
+		.collect { project ->
+			project.sourceSets.main.allJava
+		}
+
+		destinationDir = new File(buildDir, "api")
+		classpath = files(subprojects.collect { project ->
+			project.sourceSets.main.compileClasspath
+		})
+		maxMemory = '1024m'
+	}
+
+	task docsZip(type: Zip) {
+		group = 'Distribution'
+		classifier = 'docs'
+		description = "Builds -${classifier} archive containing api and reference for deployment."
+		from('src/dist') {
+			include 'changelog.txt'
+		}
+		from (api) {
+			into 'api'
+		}
+		from (reference) {
+			into 'reference'
+		}
+	}
+
+	task distZip(type: Zip, dependsOn: [docsZip]) {
+		group = 'Distribution'
+		classifier = 'dist'
+		description = "Builds -${classifier} archive, containing all jars and docs, " +
+			"suitable for community download page."
+
+		ext.baseDir = "${project.name}-${project.version}";
+
+		from('src/dist') {
+			include 'readme.txt'
+			include 'license.txt'
+			include 'notice.txt'
+			into "${baseDir}"
+			expand(copyright: new Date().format('yyyy'), version: project.version)
+		}
+
+		from(zipTree(docsZip.archivePath)) {
+			into "${baseDir}/docs"
+		}
+
+		subprojects.each { subproject ->
+			into ("${baseDir}/libs") {
+				from subproject.jar
+				if (subproject.tasks.findByPath('sourcesJar')) {
+					from subproject.sourcesJar
+				}
+				if (subproject.tasks.findByPath('javadocJar')) {
+					from subproject.javadocJar
+				}
+			}
+		}
+	}
+
+	artifacts {
+		archives docsZip
+		archives distZip
+	}
+
+
+	task wrapper(type: Wrapper) {
+		description = 'Generates gradlew[.bat] scripts'
+		gradleVersion = '2.6'
+	}
+
+}
+

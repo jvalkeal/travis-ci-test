@@ -1,0 +1,34 @@
+[[whatsnew]]
+= What's New
+
+== In 1.1
+_Spring Statemachine 1.1_ is focusing on security and a better
+interoperability with web applications.
+
+* Comprehensive support for _Spring Security_ is added, <<sm-security>>
+* Context integration with `@WithStateMachine' has been greatly
+  enhanced, <<sm-context>>
+* `StateContext` is now a first class citizen with how user can
+  interact with a State Machine, <<sm-statecontext>>.
+* Features around persistence has been enhanced with a build-in
+  support for redis, <<sm-persist-redis>>.
+* New feature helping with persist operations,
+  <<sm-persist-statemachinepersister>>.
+* Configuration model classes are now a public API.
+* New features in timer based events.
+* New _Junction_ pseudostate <<statemachine-config-states-junction>>.
+* New _Exit Point_ and _Entry Point_ pseudostates <<statemachine-config-states-exitentry>>.
+* Configuration model verifier.
+* New samples, <<statemachine-examples-security>>, <<statemachine-examples-eventservice>>.
+* UI modeling support using Eclipse Papyrus, <<sm-papyrus>>.
+
+== In 1.2
+_Spring Statemachine 1.2_ is focusing generic enhacements, better
+_UML_ support and integrations with external config repositories.
+
+* Support for UML submachines <<sm-papyrus-submachineref>>
+* New _Repository_ abstraction keeping machine configuration in an
+  external repository <<sm-repository>>
+* New support for state actions. <<state-actions>>
+* New transition error action concepts.  <<statemachine-config-actions-errorhandling>>
+
